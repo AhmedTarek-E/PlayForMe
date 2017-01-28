@@ -1,0 +1,45 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".newplaylistfragment.NewPlaylistFragment"
+    android:orientation="vertical"
+    android:animateLayoutChanges="true"
+    android:layoutAnimation="@anim/new_playlist_layout_animation">
+
+    <ImageButton
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/moodButton"
+        android:src="@drawable/whats_your_mood"
+        android:scaleType="fitXY"
+        android:background="@drawable/play_music_button_selector" />
+
+    <ImageButton
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/doYouLikeButton"
+        android:src="@drawable/do_you_like"
+        android:scaleType="fitXY"
+        android:background="@drawable/play_music_button_selector"/>
+
+    <ImageButton
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/recommendButton"
+        android:src="@drawable/recommend_me"
+        android:scaleType="fitXY"
+        android:background="@drawable/play_music_button_selector"/>
+
+    <ImageButton
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:id="@+id/customButton"
+        android:src="@drawable/custom_playlist"
+        android:scaleType="fitXY"
+        android:background="@drawable/play_music_button_selector"/>
+</LinearLayout>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="2dp"
+    android:clickable="true"
+    android:foreground="?android:attr/selectableItemBackground">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?android:listPreferredItemHeight"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:weightSum="19">
+
+        <ImageButton
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:id="@+id/moreOptionsButton"
+            android:src="@android:drawable/ic_menu_more"
+            android:background="@color/transparent"
+            android:layout_weight="3"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:orientation="vertical"
+            android:layout_weight="13">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/songName"
+                android:text="Lithium"
+                android:textAppearance="@android:style/TextAppearance.Medium" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/artistTextView"
+                android:text="Evanscene"
+                android:textColor="@color/secondaryText"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/durationTextView"
+            android:text="4:46"
+            android:textColor="@color/secondaryText"
+            android:paddingLeft="@dimen/activity_vertical_margin"
+            android:textAppearance="@android:style/TextAppearance.Medium"
+            android:layout_weight="3" />
+    </LinearLayout>
+
+</android.support.v7.widget.CardView>

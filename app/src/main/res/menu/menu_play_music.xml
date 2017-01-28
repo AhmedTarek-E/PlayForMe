@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".activities.PlayMusicActivity">
+    <item
+        android:id="@+id/action_details"
+        android:orderInCategory="100"
+        android:title="@string/action_details"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_playlist"
+        android:title="@string/action_playlist"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/action_playlist"/>
+</menu>
