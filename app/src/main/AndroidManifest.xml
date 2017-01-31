@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -15,9 +16,17 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <service android:name=".playerside.MediaPlaybackBrowserService">
+        <receiver android:name="android.support.v4.media.session.MediaButtonReceiver" >
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
+        <service android:name=".playerside.MediaPlaybackBrowserService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService"/>
+                <action android:name="android.intent.action.MEDIA_BUTTON"/>
             </intent-filter>
         </service>
 

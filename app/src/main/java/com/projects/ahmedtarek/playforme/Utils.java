@@ -10,6 +10,7 @@ public class Utils {
     public static final String ALBUM_MODE = "album_mode";
     public static final String MODE_KEY = "mode_key";
 
+
     // DetailedPlaylistMode
     public final static String PLAYLIST_MODE = "playlist_mode";
 

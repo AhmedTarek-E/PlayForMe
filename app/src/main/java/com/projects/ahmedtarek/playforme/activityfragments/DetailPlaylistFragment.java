@@ -165,7 +165,7 @@ public class DetailPlaylistFragment extends Fragment implements OnItemClickListe
     @Override
     public void onItemClick(MediaBrowserCompat.MediaItem mediaItem) {
         Intent intent = new Intent(getActivity(), PlayMusicActivity.class);
-        intent.putExtra(Intent.EXTRA_INTENT, mediaItem);
+        intent.putExtra(Intent.EXTRA_STREAM, mediaItem);
         startActivity(intent);
     }
 }

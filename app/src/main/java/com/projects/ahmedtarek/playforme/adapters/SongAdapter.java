@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import com.projects.ahmedtarek.playforme.R;
 import com.projects.ahmedtarek.playforme.interfaces.OnItemClickListener;
-import com.projects.ahmedtarek.playforme.models.Album;
 import com.projects.ahmedtarek.playforme.models.Song;
 import com.projects.ahmedtarek.playforme.playerside.MediaBrowserHelper;
 
@@ -44,7 +43,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         Song song = songs.get(position);
         holder.songNameView.setText(song.getTitle());
         holder.artistView.setText(song.getArtist());
-        holder.durationView.setText(song.getDuration());
+        holder.durationView.setText(song.getPrettyDuration());
     }
 
     @Override

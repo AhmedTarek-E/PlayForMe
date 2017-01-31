@@ -39,7 +39,8 @@ public class MediaBrowserHelper {
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.YEAR,
             MediaStore.Audio.Media.DURATION,
-            MediaStore.Audio.Media.DISPLAY_NAME
+            MediaStore.Audio.Media.DISPLAY_NAME,
+            MediaStore.Audio.Media.ALBUM_ID
     };
 
     public static final String[] ALBUM_PROJECTION = {
@@ -48,7 +49,7 @@ public class MediaBrowserHelper {
             MediaStore.Audio.Albums.ARTIST,
             MediaStore.Audio.Albums.ALBUM_ART,
             MediaStore.Audio.Albums.NUMBER_OF_SONGS,
-            MediaStore.Audio.Albums.FIRST_YEAR
+            MediaStore.Audio.Albums.FIRST_YEAR,
     };
 
     // song_projection_index
@@ -59,6 +60,7 @@ public class MediaBrowserHelper {
     public static int YEAR_INDEX = 4;
     public static int DURATION_INDEX = 5;
     public static int DISPLAY_NAME_INDEX = 6;
+    public static int ALBUM_ID_MEDIA_INDEX = 7;
 
     //album_projection_index
     public static int ALBUM_ID_INDEX = 0;
@@ -182,6 +184,7 @@ public class MediaBrowserHelper {
             song.setYear(cursor.getInt(YEAR_INDEX));
             song.setDuration(cursor.getLong(DURATION_INDEX));
             song.setDisplayName(cursor.getString(DISPLAY_NAME_INDEX));
+            song.setAlbumId(cursor.getLong(ALBUM_ID_MEDIA_INDEX));
 
             Bundle extras = new Bundle();
             extras.putSerializable(MEDIA_CONTENT_KEY, song);

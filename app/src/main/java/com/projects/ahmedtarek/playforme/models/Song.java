@@ -1,5 +1,9 @@
 package com.projects.ahmedtarek.playforme.models;
 
+import android.content.ContentUris;
+import android.net.Uri;
+import android.provider.MediaStore;
+
 import java.io.Serializable;
 
 /**
@@ -14,7 +18,7 @@ public class Song implements Serializable {
     private String title;
     private int year;
     private String album;
-
+    private long albumId;
 
     public Song(long id) {
         this.id = id;
@@ -36,7 +40,7 @@ public class Song implements Serializable {
         this.displayName = displayName;
     }
 
-    public String getDuration() {
+    public String getPrettyDuration() {
         long seconds = duration/1000;
         int minutes = (int) (seconds/60);
         seconds -= minutes*60;
@@ -62,6 +66,10 @@ public class Song implements Serializable {
         } else {
             return min + ":" + sec;
         }
+    }
+
+    public long getDuration() {
+        return duration;
     }
 
     public void setDuration(long duration) {
@@ -94,5 +102,17 @@ public class Song implements Serializable {
 
     public long getId() {
         return id;
+    }
+
+    public long getAlbumId() {
+        return albumId;
+    }
+
+    public void setAlbumId(long albumId) {
+        this.albumId = albumId;
+    }
+
+    public static Uri getSongUri(long id) {
+        return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
     }
 }
