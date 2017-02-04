@@ -10,7 +10,12 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.os.PowerManager;
 import android.os.Process;
 import android.provider.MediaStore;
@@ -31,6 +36,8 @@ import com.projects.ahmedtarek.playforme.models.Song;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  *
@@ -42,12 +49,18 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
     private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
     private MediaPlayer mediaPlayer;
     private static MediaMetadataCompat metadata;
+    private boolean isTransient = false;
+    private static boolean serviceStarted = false;
+    private Timer mTimer;
+
+    private final long ONE_SEC = 1000;
 
     private final String TAG = "MediaPlaybackService";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         MediaButtonReceiver.handleIntent(mediaSession, intent);
+
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -85,6 +98,7 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
 
         setSessionToken(mediaSession.getSessionToken());
         registerReceiver(audioBecomingNoisyReceiver, intentFilter);
+        registerReceiver(activityStartedReceiver, new IntentFilter(Utils.ACTION_ACTIVITY_START));
     }
 
     @Nullable
@@ -133,6 +147,10 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
         MediaPlaybackBrowserService.metadata = metadata;
     }
 
+    public static boolean isServiceStarted() {
+        return serviceStarted;
+    }
+
     @Override
     public void onPrepared(MediaPlayer mp) {
         mp.start();
@@ -142,6 +160,8 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
     public void onDestroy() {
         releaseMediaPlayer();
         unregisterReceiver(audioBecomingNoisyReceiver);
+        unregisterReceiver(activityStartedReceiver);
+        isTransient = false;
     }
 
     class PlayForMeCallback extends MediaSessionCompat.Callback {
@@ -159,22 +179,26 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
                     mediaSession.setActive(true);
                     if (metadata != null) {
                         mediaSession.setMetadata(metadata);
+                        startService(new Intent(getApplicationContext(), MediaPlaybackBrowserService.class));
+                        serviceStarted = true;
                         initMediaPlayer(Song.getSongUri(
                                 Long.parseLong(ControllerHelper.getMediaController().getMetadata().getDescription().getMediaId())
                         ));
                     }
                 }
             }
-
             if (mediaSession.getController().getPlaybackState().getState() == PlaybackStateCompat.STATE_PAUSED) {
                 mediaPlayer.start();
             }
+
+            startTimer();
 
             mediaSession.setPlaybackState(
                     playbackStateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 0)
                             .setActions(PlaybackStateCompat.ACTION_PLAY)
                             .build()
             );
+            isTransient = false;
         }
 
         @Override
@@ -185,6 +209,7 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
                             .setActions(PlaybackStateCompat.ACTION_PAUSE)
                             .build()
             );
+            cancelTimer();
         }
 
         @Override
@@ -208,16 +233,18 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
                             .setActions(PlaybackStateCompat.ACTION_STOP)
                             .build()
             );
-
+            stopSelf();
+            serviceStarted = false;
         }
 
         @Override
         public void onSeekTo(long pos) {
-            super.onSeekTo(pos);
+            mediaPlayer.seekTo((int) pos);
         }
     }
 
     private void initMediaPlayer(Uri uri) {
+        cancelTimer();
         releaseMediaPlayer();
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -237,6 +264,30 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
         }
     }
 
+    private void startTimer() {
+        if (mTimer == null) {
+            mTimer = new Timer();
+            mTimer.scheduleAtFixedRate(
+                    new TimerTask() {
+                        @Override
+                        public void run() {
+                            sendProgress();
+                        }
+                    },
+                    0,
+                    ONE_SEC / 100
+            );
+        }
+    }
+
+    private void cancelTimer() {
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer.purge();
+            mTimer = null;
+        }
+    }
+
     private AudioManager.OnAudioFocusChangeListener afListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
@@ -253,12 +304,10 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
                     break;
 
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                    mediaPlayer.pause();
-                    mediaSession.setPlaybackState(
-                            playbackStateBuilder.setState(PlaybackStateCompat.STATE_PAUSED, mediaPlayer.getCurrentPosition(), 0)
-                                    .setActions(PlaybackStateCompat.ACTION_PAUSE)
-                                    .build()
-                    );
+                    if (mediaSession.getController().getPlaybackState().getState() == PlaybackStateCompat.STATE_PLAYING) {
+                        mediaSession.getController().getTransportControls().pause();
+                        isTransient = true;
+                    }
                     break;
 
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
@@ -267,12 +316,9 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
 
                 case AudioManager.AUDIOFOCUS_GAIN:
                     mediaPlayer.setVolume(1, 1);
-                    mediaPlayer.start();
-                    mediaSession.setPlaybackState(
-                            playbackStateBuilder.setState(PlaybackStateCompat.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 0)
-                                    .setActions(PlaybackStateCompat.ACTION_PLAY)
-                                    .build()
-                    );
+                    if (isTransient) {
+                        mediaSession.getController().getTransportControls().play();
+                    }
                     break;
             }
         }
@@ -289,6 +335,31 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
             );
         }
     };
+
+    private BroadcastReceiver activityStartedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getBooleanExtra(Intent.EXTRA_STREAM, false)) {
+                if (mediaSession.getController().getPlaybackState().getState() == PlaybackStateCompat.STATE_PLAYING) {
+                    startTimer();
+                } else {
+                    sendProgress();
+                }
+            } else {
+                cancelTimer();
+            }
+        }
+    };
+
+    private void sendProgress() {
+        if (mediaPlayer != null) {
+            Intent intent = new Intent(Utils.ACTION_CURRENT_PROGRESS);
+            intent.putExtra(Intent.EXTRA_STREAM, mediaPlayer.getCurrentPosition());
+            sendBroadcast(intent);
+        }
+    }
+
+
 }
 
 

@@ -40,34 +40,6 @@ public class Song implements Serializable {
         this.displayName = displayName;
     }
 
-    public String getPrettyDuration() {
-        long seconds = duration/1000;
-        int minutes = (int) (seconds/60);
-        seconds -= minutes*60;
-        int hours = 0;
-        if (minutes > 60) {
-            hours = minutes/60;
-            minutes -= hours*60;
-        }
-        String min = String.valueOf(minutes);
-        String sec;
-
-        if (seconds < 10) {
-            sec = "0" + String.valueOf(seconds);
-        } else {
-            sec = String.valueOf(seconds);
-        }
-
-        if (hours > 0) {
-            if (minutes < 10) {
-                min = "0" + String.valueOf(minutes);
-            }
-            return String.valueOf(hours) + ":" + min + ":" + sec;
-        } else {
-            return min + ":" + sec;
-        }
-    }
-
     public long getDuration() {
         return duration;
     }
@@ -115,4 +87,33 @@ public class Song implements Serializable {
     public static Uri getSongUri(long id) {
         return ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
     }
+
+    public static String getPrettyDuration(long duration) {
+        long seconds = duration/1000;
+        int minutes = (int) (seconds/60);
+        seconds -= minutes*60;
+        int hours = 0;
+        if (minutes > 60) {
+            hours = minutes/60;
+            minutes -= hours*60;
+        }
+        String min = String.valueOf(minutes);
+        String sec;
+
+        if (seconds < 10) {
+            sec = "0" + String.valueOf(seconds);
+        } else {
+            sec = String.valueOf(seconds);
+        }
+
+        if (hours > 0) {
+            if (minutes < 10) {
+                min = "0" + String.valueOf(minutes);
+            }
+            return String.valueOf(hours) + ":" + min + ":" + sec;
+        } else {
+            return min + ":" + sec;
+        }
+    }
+
 }

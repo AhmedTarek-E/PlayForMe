@@ -1,16 +1,25 @@
 package com.projects.ahmedtarek.playforme.activityfragments;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.os.RemoteException;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
@@ -37,13 +46,10 @@ import com.projects.ahmedtarek.playforme.playerside.MediaBrowserHelper;
 import com.projects.ahmedtarek.playforme.playerside.MediaPlaybackBrowserService;
 import com.readystatesoftware.systembartint.SystemBarTintManager;
 
-/**
- * A placeholder fragment containing a simple view.
- */
 public class PlayMusicFragment extends Fragment implements View.OnClickListener {
     MediaBrowserCompat mediaBrowser;
     MediaControllerCompat mediaController;
-
+    MediaMetadataCompat metadata;
 
     // view
     ImageButton mPlayPauseButton;
@@ -99,6 +105,7 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         if (mediaBrowser != null) {
             mediaBrowser.connect();
         }
+        sendActivityStartBroadcast(true);
     }
 
     @Override
@@ -110,6 +117,14 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         if (mediaBrowser != null) {
             mediaBrowser.disconnect();
         }
+        sendActivityStartBroadcast(false);
+        getActivity().unregisterReceiver(progressReceiver);
+    }
+
+    private void sendActivityStartBroadcast(boolean started) {
+        Intent intent = new Intent(Utils.ACTION_ACTIVITY_START);
+        intent.putExtra(Intent.EXTRA_STREAM, started);
+        getActivity().sendBroadcast(intent);
     }
 
     @Override
@@ -139,17 +154,31 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
 
         @Override
         public void onConnected() {
+            getActivity().registerReceiver(progressReceiver, new IntentFilter(Utils.ACTION_CURRENT_PROGRESS));
             MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
             try {
                 mediaController = new MediaControllerCompat(getActivity(), token);
                 ControllerHelper.setMediaController(mediaController);
-                buildTransportControls();
                 mediaController.registerCallback(controllerCallback);
-                MediaPlaybackBrowserService.setMetadata(buildMetaData());
+
+                metadata = buildMetaData();
+                MediaMetadataCompat currentMetadata = mediaController.getMetadata();
+
+                if (currentMetadata != null) {
+                    if (metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+                            .equals(currentMetadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID))) {
+                        return;
+                    }
+                }
+                MediaPlaybackBrowserService.setMetadata(metadata);
+
+                buildTransportControls();
+
                 mediaController.getTransportControls().play();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
+            setPlayPauseButtonImage(mediaController.getPlaybackState().getState());
         }
 
         @Override
@@ -172,19 +201,23 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         @Override
         public void onPlaybackStateChanged(PlaybackStateCompat state) {
             int playbackState = state.getState();
-            switch (playbackState) {
-                case PlaybackStateCompat.STATE_PLAYING:
-                    mPlayPauseButton.setImageResource(R.drawable.pause_button);
-                    break;
-                case PlaybackStateCompat.STATE_PAUSED:
-                    mPlayPauseButton.setImageResource(R.drawable.play_button);
-                    break;
-                case PlaybackStateCompat.STATE_STOPPED:
-                    mPlayPauseButton.setImageResource(R.drawable.play_button);
-                    break;
-            }
+            setPlayPauseButtonImage(playbackState);
         }
     };
+
+    private void setPlayPauseButtonImage(int playbackState) {
+        switch (playbackState) {
+            case PlaybackStateCompat.STATE_PLAYING:
+                mPlayPauseButton.setImageResource(R.drawable.pause_button);
+                break;
+            case PlaybackStateCompat.STATE_PAUSED:
+                mPlayPauseButton.setImageResource(R.drawable.play_button);
+                break;
+            case PlaybackStateCompat.STATE_STOPPED:
+                mPlayPauseButton.setImageResource(R.drawable.play_button);
+                break;
+        }
+    }
 
     private void buildTransportControls() {
         View rootView = getView();
@@ -201,13 +234,32 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         mShuffleButton.setOnClickListener(this);
         mRepeatButton.setOnClickListener(this);
 
-        MediaMetadataCompat metadata = mediaController.getMetadata();
-        PlaybackStateCompat playbackState = mediaController.getPlaybackState();
-
         albumImageView = (ImageView) rootView.findViewById(R.id.albumImageView);
         seekBar = (SeekBar) rootView.findViewById(R.id.seek_bar);
         nowProgress = (TextView) rootView.findViewById(R.id.seekNowText);
         endProgress = (TextView) rootView.findViewById(R.id.seekEndText);
+
+        albumImageView.setImageBitmap(metadata.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART));
+
+        endProgress.setText(Song.getPrettyDuration(metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION)));
+
+        seekBar.setMax((int) metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION));
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                nowProgress.setText(Song.getPrettyDuration(progress));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                mediaController.getTransportControls().seekTo(seekBar.getProgress());
+            }
+        });
     }
 
     @Override
@@ -269,4 +321,17 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
                 .build();
 
     }
+
+    BroadcastReceiver progressReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final int progress = intent.getIntExtra(Intent.EXTRA_STREAM, 0);
+            seekBar.post(new Runnable() {
+                @Override
+                public void run() {
+                    seekBar.setProgress(progress);
+                }
+            });
+        }
+    };
 }

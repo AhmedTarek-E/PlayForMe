@@ -71,8 +71,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             style="@style/SeekBarAppTheme"
-            android:id="@+id/seek_bar"
-            android:progress="30" />
+            android:id="@+id/seek_bar" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -85,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:id="@+id/seekNowText"
-                android:text="01:31"
+                android:text="00:00"
                 android:textColor="@color/colorPrimary"
                 android:textAppearance="@android:style/TextAppearance.Small"
                 android:layout_marginLeft="24dp"
