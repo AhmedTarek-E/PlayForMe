@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.TextView;
 
+import com.projects.ahmedtarek.playforme.Utils;
 import com.projects.ahmedtarek.playforme.activityfragments.PlayMusicFragment;
 import com.projects.ahmedtarek.playforme.R;
 import com.projects.ahmedtarek.playforme.models.Song;
@@ -27,8 +28,8 @@ public class PlayMusicActivity extends AppCompatActivity {
 
         Song song = (Song) mediaItem.getDescription().getExtras().getSerializable(MediaBrowserHelper.MEDIA_PLAYING_ID);
 
-        titleView.setText(song.getTitle());
-        artistView.setText(song.getArtist());
+        titleView.setText(Utils.getTrimmedText(song.getTitle()));
+        artistView.setText(Utils.getTrimmedText(song.getArtist()));
 
         toolbar.setTitle("");
         setSupportActionBar(toolbar);

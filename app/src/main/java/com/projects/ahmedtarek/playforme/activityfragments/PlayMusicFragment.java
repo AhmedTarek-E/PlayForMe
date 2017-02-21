@@ -40,6 +40,7 @@ import android.widget.TextView;
 
 import com.projects.ahmedtarek.playforme.R;
 import com.projects.ahmedtarek.playforme.Utils;
+import com.projects.ahmedtarek.playforme.activities.DetailPlaylistActivity;
 import com.projects.ahmedtarek.playforme.models.Song;
 import com.projects.ahmedtarek.playforme.playerside.ControllerHelper;
 import com.projects.ahmedtarek.playforme.playerside.MediaBrowserHelper;
@@ -105,7 +106,12 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         if (mediaBrowser != null) {
             mediaBrowser.connect();
         }
-        sendActivityStartBroadcast(true);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        sendActivityStartBroadcast(false);
     }
 
     @Override
@@ -117,7 +123,6 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         if (mediaBrowser != null) {
             mediaBrowser.disconnect();
         }
-        sendActivityStartBroadcast(false);
         getActivity().unregisterReceiver(progressReceiver);
     }
 
@@ -138,6 +143,9 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         switch (id) {
             case R.id.action_playlist:
                 // TODO: 1/7/2017 open Playlist Activity
+                Intent intent = new Intent(getActivity(), DetailPlaylistActivity.class);
+                intent.putExtra(Intent.EXTRA_TEXT, Utils.NOW_PLAYLIST_MODE);
+                startActivity(intent);
                 return true;
             case R.id.action_details:
                 // TODO: 1/7/2017 open Details
@@ -155,6 +163,7 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         @Override
         public void onConnected() {
             getActivity().registerReceiver(progressReceiver, new IntentFilter(Utils.ACTION_CURRENT_PROGRESS));
+            sendActivityStartBroadcast(true);
             MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
             try {
                 mediaController = new MediaControllerCompat(getActivity(), token);
@@ -167,18 +176,26 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
                 if (currentMetadata != null) {
                     if (metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
                             .equals(currentMetadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID))) {
+                        metadata = currentMetadata;
+                        buildTransportControls();
+                        return;
+                    } else {
+                        mediaController.getTransportControls().stop();
+                    }
+                } else {
+                    if (metadata == null) {
+                        getActivity().finish();
                         return;
                     }
                 }
+
                 MediaPlaybackBrowserService.setMetadata(metadata);
+                mediaController.getTransportControls().play();
 
                 buildTransportControls();
-
-                mediaController.getTransportControls().play();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-            setPlayPauseButtonImage(mediaController.getPlaybackState().getState());
         }
 
         @Override
@@ -206,6 +223,9 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
     };
 
     private void setPlayPauseButtonImage(int playbackState) {
+        if (mPlayPauseButton == null) {
+            return;
+        }
         switch (playbackState) {
             case PlaybackStateCompat.STATE_PLAYING:
                 mPlayPauseButton.setImageResource(R.drawable.pause_button);
@@ -234,6 +254,13 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         mShuffleButton.setOnClickListener(this);
         mRepeatButton.setOnClickListener(this);
 
+        setPlayPauseButtonImage(mediaController.getPlaybackState().getState());
+
+        if (!ControllerHelper.isRepeated(getActivity())) {
+            mRepeatButton.setImageResource(R.drawable.repeat_button_unselected);
+        } else {
+            mRepeatButton.setImageResource(R.drawable.repeat_button);
+        }
         albumImageView = (ImageView) rootView.findViewById(R.id.albumImageView);
         seekBar = (SeekBar) rootView.findViewById(R.id.seek_bar);
         nowProgress = (TextView) rootView.findViewById(R.id.seekNowText);
@@ -280,13 +307,27 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         } else if (id == R.id.previousButton) {
             mediaController.getTransportControls().skipToPrevious();
         } else if (id == R.id.shuffleButton) {
-            // todo shuffle playlist
+            // TODO: 2/13/2017 shuffle playlist
         } else if (id == R.id.repeatButton) {
-            // TODO: 1/28/2017 repeat song
+            if (ControllerHelper.isRepeated(getActivity())) {
+                ControllerHelper.setRepeat(getActivity(), false);
+                mRepeatButton.setImageResource(R.drawable.repeat_button_unselected);
+            } else {
+                ControllerHelper.setRepeat(getActivity(), true);
+                mRepeatButton.setImageResource(R.drawable.repeat_button);
+            }
+            getActivity().sendBroadcast(
+                    new Intent(Utils.ACTION_COMMUNICATION_ACTIVITY_SERVICE)
+                            .putExtra(ControllerHelper.COMMUNICATION_KEY,
+                                    ControllerHelper.REPEAT_FLAG)
+            );
         }
     }
 
     private MediaMetadataCompat buildMetaData() {
+        if (!getActivity().getIntent().hasExtra(Intent.EXTRA_STREAM)) {
+            return null;
+        }
         MediaBrowserCompat.MediaItem mediaItem = getActivity()
                 .getIntent().getParcelableExtra(Intent.EXTRA_STREAM);
 

@@ -115,14 +115,14 @@ public class DetailPlaylistFragment extends Fragment implements OnItemClickListe
             options.putString(Utils.MODE_KEY, mediaItem.getMediaId());
 
             mediaBrowser.subscribe(parentId, options, subscriptionCallback);
-            MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
+            /*MediaSessionCompat.Token token = mediaBrowser.getSessionToken();
             try {
                 MediaControllerCompat mediaController = new MediaControllerCompat(getActivity(), token);
                 ControllerHelper.setMediaController(mediaController);
 
             } catch (RemoteException e) {
                 e.printStackTrace();
-            }
+            }*/
         }
 
         @Override
