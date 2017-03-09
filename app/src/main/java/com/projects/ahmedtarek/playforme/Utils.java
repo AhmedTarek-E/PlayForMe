@@ -1,5 +1,11 @@
 package com.projects.ahmedtarek.playforme;
 
+import android.app.Activity;
+import android.os.Build;
+import android.view.View;
+
+import com.readystatesoftware.systembartint.SystemBarTintManager;
+
 /**
  * Created by Ahmed Tarek on 1/26/2017.
  */
@@ -25,5 +31,12 @@ public class Utils {
             return text.substring(0, trimLength) + "...";
         }
         return text;
+    }
+
+    public static void setInsets(Activity context, View view) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return;
+        SystemBarTintManager tintManager = new SystemBarTintManager(context);
+        SystemBarTintManager.SystemBarConfig config = tintManager.getConfig();
+        view.setPadding(0, 0, 0, config.getNavigationBarHeight());
     }
 }

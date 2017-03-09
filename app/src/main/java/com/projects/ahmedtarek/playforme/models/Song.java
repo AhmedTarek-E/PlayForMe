@@ -11,7 +11,7 @@ import java.io.Serializable;
  *
  */
 public class Song implements Serializable {
-    private long id;
+    private long id = -1;
     private String artist;
     private String displayName;
     private long duration;

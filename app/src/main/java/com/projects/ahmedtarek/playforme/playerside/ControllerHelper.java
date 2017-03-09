@@ -7,8 +7,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.session.MediaController;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.TaskStackBuilder;
+import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v7.app.NotificationCompat;
 import android.support.v4.media.MediaDescriptionCompat;
@@ -19,6 +21,7 @@ import android.support.v4.view.KeyEventCompat;
 import android.view.KeyEvent;
 
 import com.projects.ahmedtarek.playforme.activities.PlayMusicActivity;
+import com.projects.ahmedtarek.playforme.models.Song;
 
 /**
  *
@@ -49,10 +52,31 @@ public class ControllerHelper {
         MediaMetadataCompat metadata = mediaController.getMetadata();
         MediaDescriptionCompat mediaDescription = metadata.getDescription();
 
-        /*TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+        Intent intent = new Intent(context, PlayMusicActivity.class);
+
+        String id = metadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID);
+        Song song = new Song(Long.parseLong(id));
+        song.setTitle(metadata.getString(MediaMetadataCompat.METADATA_KEY_TITLE));
+        song.setArtist(metadata.getString(MediaMetadataCompat.METADATA_KEY_ARTIST));
+
+        Bundle extras = new Bundle();
+        extras.putSerializable(MediaBrowserHelper.MEDIA_PLAYING_ID, song);
+
+        MediaBrowserCompat.MediaItem mediaItem = new MediaBrowserCompat.MediaItem(
+                new MediaDescriptionCompat.Builder()
+                        .setTitle(song.getTitle())
+                        .setExtras(extras)
+                        .setMediaId(String.valueOf(song.getId()))
+                        .build(),
+                MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+        );
+
+        intent.putExtra(Intent.EXTRA_STREAM, mediaItem);
+
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
         stackBuilder
                 .addParentStack(PlayMusicActivity.class)
-                .addNextIntent(new Intent(context, PlayMusicActivity.class));*/
+                .addNextIntent(intent);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
         builder
@@ -62,8 +86,7 @@ public class ControllerHelper {
                 .setTicker(mediaDescription.getTitle())
                 .setLargeIcon(mediaDescription.getIconBitmap())
                 .setContentIntent(
-                        //stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
-                        ControllerHelper.getMediaController().getSessionActivity()
+                        stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT)
                 )
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setDeleteIntent(getActionIntent(context, KeyEvent.KEYCODE_MEDIA_STOP));

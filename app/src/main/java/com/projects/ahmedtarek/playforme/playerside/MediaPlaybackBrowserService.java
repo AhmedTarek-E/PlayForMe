@@ -413,7 +413,7 @@ public class MediaPlaybackBrowserService extends MediaBrowserServiceCompat imple
         NotificationCompat.Builder builder = ControllerHelper
                 .buildMediaNotification(getApplicationContext(), mediaSession);
 
-        builder.setContentIntent(mediaSession.getController().getSessionActivity());
+        //builder.setContentIntent(mediaSession.getController().getSessionActivity());
         builder
                 .setSmallIcon(R.drawable.ic_stat_notification_icon)
                 .setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimaryDark));

@@ -1,25 +1,16 @@
 package com.projects.ahmedtarek.playforme.activityfragments;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
 import android.os.RemoteException;
 import android.provider.MediaStore;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
@@ -45,7 +36,6 @@ import com.projects.ahmedtarek.playforme.models.Song;
 import com.projects.ahmedtarek.playforme.playerside.ControllerHelper;
 import com.projects.ahmedtarek.playforme.playerside.MediaBrowserHelper;
 import com.projects.ahmedtarek.playforme.playerside.MediaPlaybackBrowserService;
-import com.readystatesoftware.systembartint.SystemBarTintManager;
 
 public class PlayMusicFragment extends Fragment implements View.OnClickListener {
     MediaBrowserCompat mediaBrowser;
@@ -79,16 +69,9 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_play_music, container, false);
-        setInsets(getActivity(), rootView);
+        Utils.setInsets(getActivity(), rootView);
         initialize();
         return rootView;
-    }
-
-    public static void setInsets(Activity context, View view) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return;
-        SystemBarTintManager tintManager = new SystemBarTintManager(context);
-        SystemBarTintManager.SystemBarConfig config = tintManager.getConfig();
-        view.setPadding(0, 0, 0, config.getNavigationBarHeight());
     }
 
     private void initialize() {
@@ -328,12 +311,17 @@ public class PlayMusicFragment extends Fragment implements View.OnClickListener 
         if (!getActivity().getIntent().hasExtra(Intent.EXTRA_STREAM)) {
             return null;
         }
+
         MediaBrowserCompat.MediaItem mediaItem = getActivity()
                 .getIntent().getParcelableExtra(Intent.EXTRA_STREAM);
 
         Song song = (Song) mediaItem.getDescription()
                 .getExtras()
                 .getSerializable(MediaBrowserHelper.MEDIA_PLAYING_ID);
+
+        if (song.getAlbumId() == -1) {
+            return null;
+        }
 
         Cursor cursor = getActivity().getContentResolver().query(
                 ContentUris.withAppendedId(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI, song.getAlbumId()),
